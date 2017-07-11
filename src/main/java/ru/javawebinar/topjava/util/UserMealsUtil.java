@@ -3,12 +3,11 @@ package ru.javawebinar.topjava.util;
 import ru.javawebinar.topjava.model.UserMeal;
 import ru.javawebinar.topjava.model.UserMealWithExceed;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.Month;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 /**
  * GKislin
@@ -25,23 +24,25 @@ public class UserMealsUtil {
                 new UserMeal(LocalDateTime.of(2015, Month.MAY, 31,20,0), "Ужин", 510)
         );
         getFilteredWithExceeded(mealList, LocalTime.of(7, 0), LocalTime.of(12,0), 2000);
-//        .toLocalDate();
-//        .toLocalTime();
     }
 
-    public static List<UserMealWithExceed>  getFilteredWithExceeded(List<UserMealWithExceed> mealList, LocalTime startTime, LocalTime endTime, int caloriesPerDay) {
-        List<UserMealWithExceed> doneList = getFilteredWithExceededUsingForEach(mealList, startTime, endTime);
-        return doneList;
-    }
+    public static List<UserMealWithExceed>  getFilteredWithExceeded(List<UserMeal> mealList, LocalTime startTime, LocalTime endTime, int caloriesPerDay) {
+        List<UserMealWithExceed> checkList = new ArrayList<>();
+        Map<LocalDate, Integer> map = new HashMap<>();
+        for (UserMeal userMeal: mealList){
+            map.merge(userMeal.getDateTime().toLocalDate(), userMeal.getCalories(), Integer::sum);
+        }
 
-    public static List<UserMealWithExceed> getFilteredWithExceededUsingForEach(List<UserMealWithExceed> mealList, LocalTime startTime, LocalTime endTime){
-        List<UserMealWithExceed> checkList = new ArrayList<UserMealWithExceed>();
-        for (UserMealWithExceed user: mealList){
-            if (TimeUtil.isBetween(user.getDateTime().toLocalTime(), startTime, endTime)){
-                checkList.add(user);
-                System.out.println("user "+user +" was added");
+        Map<LocalDate, Integer> exceedMap = new HashMap<>();
+        for (UserMeal userMeal: mealList){
+            if (TimeUtil.isBetween(userMeal.getDateTime().toLocalTime(), startTime, endTime) && (map.getOrDefault(userMeal.getDateTime().toLocalDate() ,0 ) > caloriesPerDay)){
+                checkList.add(new UserMealWithExceed(userMeal.getDateTime(), userMeal.getDescription(), userMeal.getCalories(), true));
+            }
+            else if (TimeUtil.isBetween(userMeal.getDateTime().toLocalTime(), startTime, endTime) && (map.getOrDefault(userMeal.getDateTime().toLocalDate() ,0 )) <= caloriesPerDay){
+                checkList.add(new UserMealWithExceed(userMeal.getDateTime(), userMeal.getDescription(), userMeal.getCalories(), false));
             }
         }
         return checkList;
     }
 }
+
